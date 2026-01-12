@@ -13,7 +13,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-
 # =========================
 # CONFIG
 # =========================
@@ -24,7 +23,6 @@ CURRENCIES = [
     "USD", "IDR", "PHP", "TWD",
     "EUR", "GBP", "MYR"
 ]
-
 
 # =========================
 # SCRAPE FUNCTION
@@ -43,17 +41,18 @@ def get_currency(in_currency, out_currency="SGD"):
     )
 
     driver.get(url)
-    time.sleep(5)
+    time.sleep(6)  # wait for JS to render
 
     soup = BeautifulSoup(driver.page_source, "html.parser")
-    value = soup.find(
-        "input",
-        {"class": "MuiInputBase-input MuiFilledInput-input"}
-    ).get("value")
+    
+    # Grab the actual converted value
+    try:
+        value = soup.find("p", class_="fx-output").text.strip()
+    except:
+        value = "N/A"
 
     driver.quit()
     return value
-
 
 # =========================
 # MAIN
@@ -72,17 +71,16 @@ for c in CURRENCIES:
 df = pd.DataFrame(data, columns=["Date", "Currency", "Unit Per SGD"])
 df.to_excel(FILENAME, index=False)
 
-
 # =========================
-# EMAIL (GMAIL)
+# EMAIL (GMAIL → irene.ng@takenaka.com.sg)
 # =========================
 EMAIL_USER = os.environ["EMAIL_USER"]
 EMAIL_PASS = os.environ["EMAIL_PASS"]
 
 msg = EmailMessage()
 msg["Subject"] = "Daily Currency Trigger"
-msg["From"] = EMAIL_USER
-msg["To"] = "irene.ng@takenaka.com.sg"
+msg["From"] = EMAIL_USER                # Gmail sender
+msg["To"] = "irene.ng@takenaka.com.sg" # Corporate recipient
 msg.set_content("Please see attached currency exchange file.")
 
 with open(FILENAME, "rb") as f:
@@ -101,5 +99,4 @@ with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
     server.login(EMAIL_USER, EMAIL_PASS)
     server.send_message(msg)
 
-print("✅ Email sent successfully via Gmail")
-
+print("✅ Email sent successfully via Gmail to irene.ng@takenaka.com.sg")
