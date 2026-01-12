@@ -69,7 +69,9 @@ df.to_excel(filename, index=False)
 EMAIL_USER = os.environ["EMAIL_USER"]
 EMAIL_PASS = os.environ["EMAIL_PASS"]
 
-print(EMAIL_USER)
+print("EMAIL_USER exists:", "EMAIL_USER" in os.environ)
+print("EMAIL_PASS exists:", "EMAIL_PASS" in os.environ)
+
 msg = EmailMessage()
 msg["Subject"] = "Daily Currency Trigger"
 msg["From"] = EMAIL_USER
@@ -89,4 +91,5 @@ with smtplib.SMTP("smtp.office365.com", 587) as server:
     server.send_message(msg)
 
 print("Email sent successfully")
+
 
