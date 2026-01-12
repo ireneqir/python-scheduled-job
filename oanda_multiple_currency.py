@@ -7,22 +7,29 @@ import smtplib
 import mimetypes
 import ssl
 from email.message import EmailMessage
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-# -----------------------------
-# File setup
-# -----------------------------
-filename = "oanda_exchange_rate_sgd.xlsx"
-if os.path.exists(filename):
-    os.remove(filename)
 
-# -----------------------------
-# Function to scrape currency
-# -----------------------------
-def get_currency(in_currency, out_currency):
+# =========================
+# CONFIG
+# =========================
+FILENAME = "oanda_exchange_rate_sgd.xlsx"
+
+CURRENCIES = [
+    "JPY", "THB", "INR", "SGD", "VND",
+    "USD", "IDR", "PHP", "TWD",
+    "EUR", "GBP", "MYR"
+]
+
+
+# =========================
+# SCRAPE FUNCTION
+# =========================
+def get_currency(in_currency, out_currency="SGD"):
     url = f"https://www.oanda.com/currency-converter/en/?from={in_currency}&to={out_currency}&amount=1"
 
     options = Options()
@@ -30,66 +37,68 @@ def get_currency(in_currency, out_currency):
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    # Use webdriver-manager to install ChromeDriver automatically
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()),
+        options=options
+    )
+
     driver.get(url)
     time.sleep(5)
 
     soup = BeautifulSoup(driver.page_source, "html.parser")
-    currency_unit = soup.find(
+    value = soup.find(
         "input",
         {"class": "MuiInputBase-input MuiFilledInput-input"}
     ).get("value")
 
     driver.quit()
-    return currency_unit
+    return value
 
-# -----------------------------
-# Currency list
-# -----------------------------
-country = ["JPY","THB","INR","SGD","VND","USD","IDR","PHP","TWD","EUR","GBP","MYR"]
 
-data = []
+# =========================
+# MAIN
+# =========================
+if os.path.exists(FILENAME):
+    os.remove(FILENAME)
+
 today = date.today()
+data = []
 
-for c in country:
-    rate = get_currency(c, "SGD")
+for c in CURRENCIES:
+    rate = get_currency(c)
+    print(f"{rate} - {c}")
     data.append((today, c, rate))
-    print(rate, "-", c)
 
-# -----------------------------
-# Save Excel
-# -----------------------------
 df = pd.DataFrame(data, columns=["Date", "Currency", "Unit Per SGD"])
-df.to_excel(filename, index=False)
+df.to_excel(FILENAME, index=False)
 
-# -----------------------------
-# Email via Microsoft 365
-# -----------------------------
+
+# =========================
+# EMAIL (GMAIL)
+# =========================
 EMAIL_USER = os.environ["EMAIL_USER"]
 EMAIL_PASS = os.environ["EMAIL_PASS"]
-
-print("EMAIL_USER exists:", "EMAIL_USER" in os.environ)
-print("EMAIL_PASS exists:", "EMAIL_PASS" in os.environ)
 
 msg = EmailMessage()
 msg["Subject"] = "Daily Currency Trigger"
 msg["From"] = EMAIL_USER
 msg["To"] = EMAIL_USER
-msg.set_content("Please see attached file.")
+msg.set_content("Please see attached currency exchange file.")
 
-with open(filename, "rb") as f:
+with open(FILENAME, "rb") as f:
     file_data = f.read()
-    maintype, _, subtype = (mimetypes.guess_type(filename)[0] or "application/octet-stream").partition("/")
-    msg.add_attachment(file_data, maintype=maintype, subtype=subtype, filename=filename)
+    maintype, _, subtype = (mimetypes.guess_type(FILENAME)[0] or "application/octet-stream").partition("/")
+    msg.add_attachment(
+        file_data,
+        maintype=maintype,
+        subtype=subtype,
+        filename=FILENAME
+    )
 
 context = ssl.create_default_context()
 
-with smtplib.SMTP("smtp.office365.com", 587) as server:
-    server.starttls(context=context)
+with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
     server.login(EMAIL_USER, EMAIL_PASS)
     server.send_message(msg)
 
-print("Email sent successfully")
-
-
+print("✅ Email sent successfully via Gmail")
