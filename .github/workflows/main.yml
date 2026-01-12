@@ -25,4 +25,4 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
         run: |
-          oanda_multiple_currency.py
+             python oanda_multiple_currency.py
