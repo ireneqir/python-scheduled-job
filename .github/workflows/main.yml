@@ -1,0 +1,28 @@
+name: OANDA Currency Email Job
+
+on:
+  schedule:
+    - cron: "0 23 * * *"   # 7:00 AM Singapore
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install selenium beautifulsoup4 pandas openpyxl
+
+      - name: Run script
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        run: |
+          oanda_multiple_currency.py
