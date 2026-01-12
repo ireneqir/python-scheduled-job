@@ -9,19 +9,19 @@ import ssl
 from email.message import EmailMessage
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
-
-# =============================
+# -----------------------------
 # File setup
-# =============================
+# -----------------------------
 filename = "oanda_exchange_rate_sgd.xlsx"
 if os.path.exists(filename):
     os.remove(filename)
 
-
-# =============================
-# Scrape exchange rate
-# =============================
+# -----------------------------
+# Function to scrape currency
+# -----------------------------
 def get_currency(in_currency, out_currency):
     url = f"https://www.oanda.com/currency-converter/en/?from={in_currency}&to={out_currency}&amount=1"
 
@@ -30,7 +30,8 @@ def get_currency(in_currency, out_currency):
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    driver = webdriver.Chrome(options=options)
+    # Use webdriver-manager to install ChromeDriver automatically
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(url)
     time.sleep(5)
 
@@ -43,15 +44,10 @@ def get_currency(in_currency, out_currency):
     driver.quit()
     return currency_unit
 
-
-# =============================
+# -----------------------------
 # Currency list
-# =============================
-country = [
-    "JPY", "THB", "INR", "SGD", "VND",
-    "USD", "IDR", "PHP", "TWD",
-    "EUR", "GBP", "MYR"
-]
+# -----------------------------
+country = ["JPY","THB","INR","SGD","VND","USD","IDR","PHP","TWD","EUR","GBP","MYR"]
 
 data = []
 today = date.today()
@@ -61,17 +57,15 @@ for c in country:
     data.append((today, c, rate))
     print(rate, "-", c)
 
-
-# =============================
+# -----------------------------
 # Save Excel
-# =============================
+# -----------------------------
 df = pd.DataFrame(data, columns=["Date", "Currency", "Unit Per SGD"])
 df.to_excel(filename, index=False)
 
-
-# =============================
+# -----------------------------
 # Email via Microsoft 365
-# =============================
+# -----------------------------
 EMAIL_USER = os.environ["EMAIL_USER"]
 EMAIL_PASS = os.environ["EMAIL_PASS"]
 
@@ -83,15 +77,8 @@ msg.set_content("Please see attached file.")
 
 with open(filename, "rb") as f:
     file_data = f.read()
-    maintype, _, subtype = (
-        mimetypes.guess_type(filename)[0] or "application/octet-stream"
-    ).partition("/")
-    msg.add_attachment(
-        file_data,
-        maintype=maintype,
-        subtype=subtype,
-        filename=filename
-    )
+    maintype, _, subtype = (mimetypes.guess_type(filename)[0] or "application/octet-stream").partition("/")
+    msg.add_attachment(file_data, maintype=maintype, subtype=subtype, filename=filename)
 
 context = ssl.create_default_context()
 
