@@ -1,0 +1,25 @@
+name: OANDA Currency Scraper
+
+on:
+  schedule:
+    - cron: "0 23 * * *"   # 7am Singapore
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install selenium beautifulsoup4 pandas openpyxl
+
+      - name: Run script
+        run: |
+          oanda_multiple_currency.py.py
