@@ -78,7 +78,7 @@ EMAIL_USER = os.environ["EMAIL_USER"]
 EMAIL_PASS = os.environ["EMAIL_PASS"]
 
 msg = EmailMessage()
-msg["Subject"] = "Daily Currency Trigger"
+msg["Subject"] = "Daily Onada Currency Github"
 msg["From"] = EMAIL_USER                # Gmail sender
 msg["To"] = "irene.ng@takenaka.com.sg" # Corporate recipient
 msg.set_content("Please see attached currency exchange file.")
@@ -100,3 +100,4 @@ with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
     server.send_message(msg)
 
 print("✅ Email sent successfully via Gmail to irene.ng@takenaka.com.sg")
+
