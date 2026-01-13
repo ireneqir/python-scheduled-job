@@ -73,7 +73,7 @@ print(EMAIL_USER)
 msg = EmailMessage()
 msg["Subject"] = "Daily Currency Trigger"
 msg["From"] = EMAIL_USER
-msg["To"] = EMAIL_USER
+msg["To"] = "irene.ng@takenaka.com.sg"
 msg.set_content("Please see attached file.")
 
 with open(filename, "rb") as f:
@@ -89,3 +89,4 @@ with smtplib.SMTP("smtp.office365.com", 587) as server:
     server.send_message(msg)
 
 print("Email sent successfully")
+
