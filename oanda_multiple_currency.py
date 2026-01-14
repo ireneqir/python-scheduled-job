@@ -1,45 +1,41 @@
 import requests
 import pandas as pd
 from datetime import date
+import sys
 
-# =========================
-# CONFIG
-# =========================
-BASE_CURRENCY = "SGD"
+BASE = "SGD"
 
 CURRENCIES = [
-    "INR",
-    "SGD",
-    "VND",
-    "USD",
-    "IDR",
-    "PHP",
-    "TWD",
-    "EUR",
-    "GBP",
-    "MYR"
+    "INR", "SGD", "VND", "USD", "IDR",
+    "PHP", "TWD", "EUR", "GBP", "MYR"
 ]
 
-OUTPUT_FILE = "exchange_rate_per_sgd.xlsx"
+url = f"https://api.exchangerate.host/latest?base={BASE}"
+
+try:
+    r = requests.get(url, timeout=15)
+    r.raise_for_status()
+    data = r.json()
+except Exception as e:
+    print("❌ HTTP / Network error:", e)
+    sys.exit(1)
 
 # =========================
-# FETCH RATES
+# VALIDATE RESPONSE
 # =========================
-url = f"https://api.exchangerate.host/latest?base={BASE_CURRENCY}"
-response = requests.get(url, timeout=10)
-data = response.json()
+if "rates" not in data:
+    print("❌ API response missing 'rates'")
+    print("Full response:")
+    print(data)
+    sys.exit(1)
 
 rates = data["rates"]
-today = date.today().isoformat()
 
 rows = []
+today = date.today().isoformat()
 
 for ccy in CURRENCIES:
-    if ccy == "SGD":
-        rate = 1.0
-    else:
-        rate = round(rates.get(ccy, 0), 6)
-
+    rate = 1.0 if ccy == "SGD" else round(rates.get(ccy, 0), 6)
     rows.append({
         "Date": today,
         "Base": "SGD",
@@ -47,11 +43,8 @@ for ccy in CURRENCIES:
         "Rate (1 SGD)": rate
     })
 
-# =========================
-# SAVE TO EXCEL
-# =========================
 df = pd.DataFrame(rows)
-df.to_excel(OUTPUT_FILE, index=False)
+df.to_excel("exchange_rate_per_sgd.xlsx", index=False)
 
-print("Exchange rates saved to", OUTPUT_FILE)
+print("✅ Exchange rates generated successfully")
 print(df)
