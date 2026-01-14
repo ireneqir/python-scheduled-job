@@ -70,4 +70,13 @@ df = pd.DataFrame(rows)
 # SAVE TO EXCEL
 # =========================
 try:
-    df.to_excel(OUTPUT_FILE, index=F
+    df.to_excel(OUTPUT_FILE, index=False)
+    print(f"✅ Exchange rates saved to {OUTPUT_FILE}")
+except Exception as e:
+    print("❌ Failed to save Excel file:", e)
+    sys.exit(1)
+
+# =========================
+# PRINT TO CONSOLE
+# =========================
+print(df)
