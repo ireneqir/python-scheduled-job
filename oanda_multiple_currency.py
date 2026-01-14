@@ -1,22 +1,40 @@
+import os
+import sys
 import requests
 import pandas as pd
 from datetime import date
-import sys
 
-BASE = "SGD"
+# =========================
+# CONFIG
+# =========================
+API_KEY = os.getenv("EXCHANGE_API_KEY")  # Get API key from environment
+
+if not API_KEY:
+    raise ValueError("❌ EXCHANGE_API_KEY not set in environment variables.")
+
+BASE_CURRENCY = "SGD"
 
 CURRENCIES = [
     "INR", "SGD", "VND", "USD", "IDR",
     "PHP", "TWD", "EUR", "GBP", "MYR"
 ]
 
-url = f"https://api.exchangerate.host/latest?base={BASE}"
+OUTPUT_FILE = "exchange_rate_per_sgd.xlsx"
+
+# =========================
+# API REQUEST
+# =========================
+url = "https://api.exchangerate.host/latest"
+params = {
+    "base": BASE_CURRENCY,
+    "access_key": API_KEY
+}
 
 try:
-    r = requests.get(url, timeout=15)
-    r.raise_for_status()
-    data = r.json()
-except Exception as e:
+    response = requests.get(url, params=params, timeout=15)
+    response.raise_for_status()
+    data = response.json()
+except requests.exceptions.RequestException as e:
     print("❌ HTTP / Network error:", e)
     sys.exit(1)
 
@@ -24,27 +42,32 @@ except Exception as e:
 # VALIDATE RESPONSE
 # =========================
 if "rates" not in data:
-    print("❌ API response missing 'rates'")
-    print("Full response:")
+    print("❌ API error or missing 'rates' in response")
+    print("Full API response:")
     print(data)
     sys.exit(1)
 
 rates = data["rates"]
-
-rows = []
 today = date.today().isoformat()
 
+# =========================
+# BUILD DATAFRAME
+# =========================
+rows = []
+
 for ccy in CURRENCIES:
-    rate = 1.0 if ccy == "SGD" else round(rates.get(ccy, 0), 6)
+    rate = 1.0 if ccy == BASE_CURRENCY else round(rates.get(ccy, 0), 6)
     rows.append({
         "Date": today,
-        "Base": "SGD",
+        "Base": BASE_CURRENCY,
         "Currency": ccy,
         "Rate (1 SGD)": rate
     })
 
 df = pd.DataFrame(rows)
-df.to_excel("exchange_rate_per_sgd.xlsx", index=False)
 
-print("✅ Exchange rates generated successfully")
-print(df)
+# =========================
+# SAVE TO EXCEL
+# =========================
+try:
+    df.to_excel(OUTPUT_FILE, index=F
