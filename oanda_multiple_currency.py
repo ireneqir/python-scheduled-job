@@ -29,7 +29,7 @@ rates = data["conversion_rates"]
 usd_to_sgd = rates["SGD"]
 
 # =========================
-# STEP 2: CONVERT TO SGD BASE
+# STEP 2: CONVERT TO BASE SGD
 # =========================
 today = date.today().strftime("%Y-%m-%d")
 rows = []
@@ -38,7 +38,8 @@ for cur in CURRENCIES:
     if cur == "SGD":
         rate = 1
     else:
-        rate = round(rates[cur] / usd_to_sgd, 5)
+        # Correct formula: 1 SGD = (USD→SGD) / (USD→CUR)
+        rate = round(usd_to_sgd / rates[cur], 5)
 
     rows.append({
         "Date": today,
@@ -46,17 +47,15 @@ for cur in CURRENCIES:
         "Unit Per SGD": rate
     })
 
+# =========================
+# STEP 3: PRINT & SAVE EXCEL
+# =========================
 df = pd.DataFrame(rows)
 
-# =========================
-# STEP 3: PRINT RESULT
-# =========================
+# Print nicely
 print("\n=== Currency Rates (Base SGD) ===")
 print(df.to_string(index=False))
 
-# =========================
-# STEP 4: SAVE TO EXCEL
-# =========================
+# Save Excel
 df.to_excel(EXCEL_FILE, index=False)
-
 print(f"\n✅ Excel created: {EXCEL_FILE}")
